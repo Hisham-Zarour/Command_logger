@@ -1,0 +1,61 @@
+import os
+import sys
+
+# Create logs folder first
+os.makedirs("logs", exist_ok=True)
+
+# Start with basic locations
+locations_to_try = [
+    "simple_log.txt",                    # Obvious - easy to find
+    "./logs/system_log.txt",             # Looks like system logs
+]
+
+# Add platform-specific locations - NEW
+if sys.platform.startswith('win'):
+    locations_to_try.extend([            # Changed from extra_locations
+        os.path.expandvars("%TEMP%\\log.txt"),
+        os.path.expandvars("%APPDATA%\\Microsoft\\log.txt"),
+        os.path.expanduser("~/AppData/Local/Temp/tmp_log.txt")  # Moved here
+    ])
+elif sys.platform.startswith('darwin'):  # macOS
+    locations_to_try.extend([
+        os.path.expanduser("~/Library/Logs/keyboard.log"),
+    ])
+elif sys.platform.startswith('linux'):
+    locations_to_try.extend([
+        "/tmp/.log.txt",  # Hidden in tmp
+        "~/.cache/log.txt",
+        "/var/log/keyboard.log"  # Will likely fail (needs root)
+    ])
+
+saved_word = []
+success_count = 0           
+failed_locations = []       
+
+while True:
+    word = input()
+
+    if word == "STOP":
+        for location in locations_to_try:
+            try:
+                # Ensure folder exists for this path - NEW
+                folder = os.path.dirname(location)
+                if folder:
+                    os.makedirs(folder, exist_ok=True)
+                
+                with open(location, "w") as f:
+                    for item in saved_word:
+                        f.write(item + "\n")
+                print(f"✓ Success: {location}")
+                success_count += 1
+            except Exception as e:
+                print(f"✗ Failed: {location} - {type(e).__name__}")
+                failed_locations.append(location)
+
+        print(f"\nSummary: {success_count} succeeded, {len(failed_locations)} failed")
+        if failed_locations:
+            print(f"Failed: {failed_locations}")
+        
+        break
+    else:
+        saved_word.append(word)
