@@ -1,0 +1,13 @@
+saved_char = [] #this saves each character
+
+while True:
+    line = input()
+
+    if line == "STOP": #added stop to stop the code to see if it works
+        break
+
+    for char in line:
+        saved_char.append(char) # This saves the char as a list in the saved_char
+
+for result in saved_char:
+    print(result, end=" ") # This prints each saved_char seperated by a space
