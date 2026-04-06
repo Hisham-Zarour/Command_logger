@@ -1,5 +1,13 @@
 # Cybersecurity Learning Project: From Basic Logger to Advanced Detector
 
+## 📑 Table of Contents
+- [Important Disclaimer](#⚠️-important-disclaimer)
+- [About Me](#👋-about-me)
+- [Project Evolution & Files](#📁-project-evolution--files)
+- [Feature Comparison](#📊-feature-comparison)
+- [What I Learned](#🎯-what-i-learned)
+- [How to Use](#🚀-how-to-use-educational-purposes-only)
+
 ⚠️ Important Disclaimer
 
 THIS PROJECT IS FOR EDUCATIONAL PURPOSES ONLY
@@ -130,6 +138,19 @@ Reusable functions for file attribute manipulation, timestamp operations, and ra
 - Documentation and forensic logging
 - Ethical considerations in security tool development
 - Real-world evasion vs detection feedback loop
+
+---
+
+## 📞 Contact
+
+**GitHub**: HishamZarour  
+**Project Status**: Active learning - feedback welcome!
+
+---
+
+*"To build effective defenses, you must first understand the offense."*
+
+**Last Updated**: January 2026
 
 ---
 
