@@ -1,5 +1,17 @@
 # Cybersecurity Learning Project: From Basic Logger to Advanced Detector
 
+⚠️ Important Disclaimer
+
+THIS PROJECT IS FOR EDUCATIONAL PURPOSES ONLY
+
+    Only test on systems you own or have explicit permission to test
+
+    Never use these techniques maliciously
+
+    Understanding evasion helps build better defenses
+
+    Always follow applicable laws and regulations
+
 ## 👋 About Me
 
 Hello! I'm **Hisham Zarour**, a Computer Science student with a passion for cybersecurity. This project represents my hands-on journey from building simple tools to creating sophisticated security systems. Through iterative development, I explored both offensive techniques and defensive countermeasures.
