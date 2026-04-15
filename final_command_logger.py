@@ -4,17 +4,26 @@ import time
 import random
 import string
 import subprocess
+import platform
 from datetime import datetime
 
+# ========== PLATFORM DETECTION ==========
+IS_WINDOWS = platform.system() == 'Windows'
+IS_LINUX = platform.system() == 'Linux'
+IS_MAC = platform.system() == 'Darwin'
+
 # ========== TRY TO IMPORT WINDOWS MODULES ==========
-try:
-    import win32api
-    import win32con
-    HAS_WIN32 = True
-except ImportError:
-    HAS_WIN32 = False
-    print("⚠️  Note: pywin32 not installed. Install with: pip install pywin32")
-    print("   Stealth features will be limited.\n")
+HAS_WIN32 = False
+if IS_WINDOWS:
+    try:
+        import win32api
+        import win32con
+        HAS_WIN32 = True
+    except ImportError:
+        print("⚠️  Note: pywin32 not installed. Install with: pip install pywin32")
+        print("   Windows stealth features will be limited.\n")
+else:
+    print(f"✅ Running on {platform.system()} - Using native stealth methods\n")
 
 # ========== RANDOM FILENAME GENERATORS ==========
 
@@ -61,16 +70,26 @@ def random_legitimate_name():
         return f"{prefix}{suffix}"
 
 def random_system_mimic():
-    """Generate filename that mimics Windows system files"""
+    """Generate filename that mimics system files"""
     
-    system_patterns = [
-        f"win{random.randint(10, 32)}.log",
-        f"event{random.randint(100, 999)}.evtx",
-        f"app{random.hexdigits.lower()[:4]}.dat",
-        f"ms{random.randint(1, 9)}0{random.randint(1, 9)}.tmp",
-        f"~${random_string(4)}.tmp",
-        f".{random_string(6)}.cache"
-    ]
+    if IS_WINDOWS:
+        system_patterns = [
+            f"win{random.randint(10, 32)}.log",
+            f"event{random.randint(100, 999)}.evtx",
+            f"app{random.hexdigits.lower()[:4]}.dat",
+            f"ms{random.randint(1, 9)}0{random.randint(1, 9)}.tmp",
+            f"~${random_string(4)}.tmp",
+            f".{random_string(6)}.cache"
+        ]
+    else:  # Linux/Mac
+        system_patterns = [
+            f".{random_string(6)}.cache",
+            f"systemd-{random_string(8)}.log",
+            f"kernel-{random_hex_string(6)}.log",
+            f".{random_string(4)}.swp",
+            f"core.{random_hex_string(8)}",
+            f"hsperfdata_{random_string(6)}"
+        ]
     
     return random.choice(system_patterns)
 
@@ -83,7 +102,7 @@ def get_random_filename(style="random", custom_ext=".txt"):
         - "hex": Hex characters (f3a8c2b1.txt)  
         - "guid": GUID format ({a1b2c3d4-...}.txt)
         - "legit": Looks like legitimate software (chrome_cache.log)
-        - "system": Mimics Windows system files (win32.log)
+        - "system": Mimics system files
         - "timestamp": Uses timestamp + random (20260122_143022_a1b2.txt)
     """
     
@@ -117,7 +136,7 @@ def get_random_filename(style="random", custom_ext=".txt"):
     
     return name + ext
 
-# ========== STEALTH FUNCTIONS ==========
+# ========== CROSS-PLATFORM STEALTH FUNCTIONS ==========
 
 def hide_file_windows(filepath):
     """Hide file using Windows attributes (Hidden + System)"""
@@ -133,25 +152,84 @@ def hide_file_windows(filepath):
         print(f"      ⚠️  Could not hide: {e}")
         return False
 
-def unhide_file_windows(filepath):
-    """Remove hidden/system attributes from file"""
-    if not HAS_WIN32:
-        return False
-    
+def hide_file_unix(filepath):
+    """Hide file on Linux/Unix by renaming to dot-file"""
     try:
-        attrs = win32api.GetFileAttributes(filepath)
-        win32api.SetFileAttributes(filepath, attrs & ~(2 | 4))  # Remove HIDDEN (2) and SYSTEM (4)
+        dirname = os.path.dirname(filepath)
+        basename = os.path.basename(filepath)
+        if not basename.startswith('.'):
+            new_path = os.path.join(dirname, '.' + basename)
+            os.rename(filepath, new_path)
+            return True
+        return True  # Already hidden
+    except Exception as e:
+        print(f"      ⚠️  Could not hide: {e}")
+        return False
+
+def hide_file_mac(filepath):
+    """Hide file on macOS using chflags"""
+    try:
+        subprocess.run(['chflags', 'hidden', filepath], capture_output=True, check=False)
         return True
     except:
-        # Fallback to attrib command
+        # Fallback to dot-file method
+        return hide_file_unix(filepath)
+
+def hide_file(filepath):
+    """Cross-platform file hiding"""
+    if IS_WINDOWS and HAS_WIN32:
+        return hide_file_windows(filepath)
+    elif IS_WINDOWS and not HAS_WIN32:
+        # Try attrib command as fallback
+        try:
+            subprocess.run(['attrib', '+h', '+s', filepath], shell=True, capture_output=True)
+            return True
+        except:
+            return False
+    elif IS_MAC:
+        return hide_file_mac(filepath)
+    elif IS_LINUX:
+        return hide_file_unix(filepath)
+    return False
+
+def unhide_file_windows(filepath):
+    """Remove hidden/system attributes from file (Windows)"""
+    if not HAS_WIN32:
         try:
             subprocess.run(['attrib', '-h', '-s', filepath], shell=True, capture_output=True)
             return True
         except:
             return False
+    
+    try:
+        attrs = win32api.GetFileAttributes(filepath)
+        win32api.SetFileAttributes(filepath, attrs & ~(2 | 4))
+        return True
+    except:
+        return False
+
+def unhide_file_unix(filepath):
+    """Unhide file on Unix by removing dot prefix"""
+    try:
+        dirname = os.path.dirname(filepath)
+        basename = os.path.basename(filepath)
+        if basename.startswith('.'):
+            new_path = os.path.join(dirname, basename[1:])
+            os.rename(filepath, new_path)
+            return True
+        return True
+    except:
+        return False
+
+def unhide_file(filepath):
+    """Cross-platform unhide"""
+    if IS_WINDOWS:
+        return unhide_file_windows(filepath)
+    else:
+        return unhide_file_unix(filepath)
 
 def spoof_timestamp(filepath):
-    """Make file appear older (30-180 days old)"""
+    """Make file appear older (30-180 days old) - works on all platforms"""
     try:
         days_old = random.randint(30, 180)
         old_time = time.time() - (days_old * 86400)
@@ -165,13 +243,18 @@ def make_file_stealthy(filepath):
     """Apply all stealth techniques to a file"""
     print(f"    🕵️  Applying stealth:")
     
-    # 1. Hide file
-    if hide_file_windows(filepath):
-        print(f"      ✓ Hidden + System attributes applied")
+    # 1. Hide file (platform-specific)
+    if hide_file(filepath):
+        if IS_WINDOWS:
+            print(f"      ✓ Hidden + System attributes applied")
+        elif IS_MAC:
+            print(f"      ✓ Hidden flag + dot-file applied")
+        else:
+            print(f"      ✓ Hidden (dot-file) applied")
     else:
-        print(f"      ⚠️  Skipping hide (Windows-only)")
+        print(f"      ⚠️  Could not hide file")
     
-    # 2. Spoof timestamp
+    # 2. Spoof timestamp (works on all platforms)
     days = spoof_timestamp(filepath)
     if days:
         print(f"      ✓ Timestamp spoofed: {days} days old")
@@ -186,13 +269,30 @@ def get_stealth_locations():
     Each location gets a different style of random name
     """
     
-    base_locations = [
-        ".",                                      
-        "./logs/",                               
-        os.path.expandvars("%TEMP%"),            
-        os.path.expandvars("%APPDATA%\\Microsoft\\"),
-        os.path.expanduser("~/AppData/Local/Temp/")
-    ]
+    if IS_WINDOWS:
+        base_locations = [
+            ".",                                      
+            "./logs/",                               
+            os.path.expandvars("%TEMP%"),            
+            os.path.expandvars("%APPDATA%\\Microsoft\\"),
+            os.path.expanduser("~/AppData/Local/Temp/")
+        ]
+    elif IS_MAC:
+        base_locations = [
+            ".",
+            "./logs/",
+            "/tmp/",
+            os.path.expanduser("~/Library/Caches/"),
+            os.path.expanduser("~/.cache/")
+        ]
+    else:  # Linux
+        base_locations = [
+            ".",
+            "./logs/",
+            "/tmp/",
+            os.path.expanduser("~/.cache/"),
+            os.path.expanduser("~/.local/share/")
+        ]
     
     stealth_locations = []
     styles = ["legit", "system", "hex", "timestamp", "random"]
@@ -223,15 +323,21 @@ def get_stealth_locations():
 
 def main():
     print("="*70)
-    print("🔐 ENHANCED STEALTH COMMAND LOGGER")
+    print("🔐 ENHANCED STEALTH COMMAND LOGGER (Cross-Platform)")
     print("="*70)
     print("⚠️  EDUCATIONAL PURPOSE ONLY - Test on your own systems")
     print("="*70)
+    print(f"🖥️  Platform: {platform.system()}")
     print("\n📝 Type your input. Type 'STOP' to end session.")
     print("\n🕵️  STEALTH FEATURES:")
     print("   • Random filenames (6 different styles)")
     print("   • Different style per location")
-    print("   • Hidden + System file attributes")
+    if IS_WINDOWS:
+        print("   • Hidden + System file attributes")
+    elif IS_MAC:
+        print("   • Hidden flags + dot-file naming")
+    else:
+        print("   • Hidden dot-file naming")
     print("   • Spoofed timestamps (30-180 days old)")
     print("   • Multiple persistence locations")
     print("="*70)
@@ -280,7 +386,7 @@ def main():
                     print(f"    ✗ FAILED: Permission denied")
                     failed_locations.append(location_info['base'])
                 except Exception as e:
-                    print(f"    ✗ FAILED: {type(e).__name__}")
+                    print(f"    ✗ FAILED: {type(e).__name__}: {e}")
                     failed_locations.append(location_info['base'])
             
             # Summary
@@ -294,7 +400,11 @@ def main():
             if failed_locations:
                 print(f"    Failed locations: {len(failed_locations)}")
             print("="*70)
-            print("\n🔍 To find these files, run your detector or enable 'Show hidden files'")
+            
+            if IS_WINDOWS:
+                print("\n🔍 To find these files, enable 'Show hidden files' in File Explorer")
+            else:
+                print("\n🔍 To find these files, use 'ls -la' to show hidden files")
             break
             
         else:
