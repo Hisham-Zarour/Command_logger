@@ -52,21 +52,14 @@ Hello! I'm **Hisham Zarour**, a Computer Science student with a passion for cybe
 | **Features** | Hidden/system file attributes, timestamp spoofing (30-180 days old), mimics legitimate system files |
 | **Complexity** | Advanced - ~80 lines of code |
 
-### Phase 4: Advanced Stealth Logger (`final_command_logger.py`) 🆕
+### Phase 4: Stealth Console Input Recorder (`final_command_logger.py`)
 
 | Aspect | Details |
 |--------|---------|
-| **Purpose** | Implement production-level evasion techniques used by real malware |
-| **Features** | 6 different random filename styles, per-location evasion strategy, GUID/hex/timestamp naming, legitimate software mimicry, Windows system file mimicry, cross-platform fallback |
+| **Purpose** | Build a console input recorder with real-world stealth persistence techniques |
+| **Features** | 6 random filename styles, per-location evasion strategy, GUID/hex/timestamp naming, legitimate software mimicry, cross-platform stealth (Windows attributes / Unix dot-files), timestamp spoofing, silent operation |
 | **Complexity** | Expert - ~250 lines of code |
-
-**What makes this version special:**
-- **No predictable patterns** - Each save location uses a different naming style
-- **Social engineering evasion** - Files named like `chrome_cache.log` or `win32.log`
-- **Hash-style evasion** - Files named like `7f3a9c2b.txt` (hex only)
-- **Registry-style evasion** - Files named like `{a1b2c3d4-e5f6-...}.txt` (GUID format)
-- **Timestamp-based evasion** - Files named like `20260122_143022_a1b2.txt`
-- **True randomness** - Files named like `jk3n9s2.txt` (alphanumeric random)
+| **Scope** | Captures input typed **into its own console** — not system-wide |
 
 ### Phase 5: Advanced Detector (`detector_v2.py`) 🆕
 
@@ -113,6 +106,14 @@ Reusable functions for file attribute manipulation, timestamp operations, and ra
 ---
 
 ## 🎯 What I Learned
+
+**Important Scope Note:**
+This tool is a **console input recorder**, not a system-wide keylogger.
+It captures input typed directly into its own console window, applying
+the same stealth persistence techniques that real malware uses when
+storing captured data. This distinction was an intentional design choice
+for the educational version — the next iteration will explore OS-level
+input hooks for system-wide capture.
 
 ### Technical Skills:
 - **Python Programming**: From basic syntax to Windows API integration
