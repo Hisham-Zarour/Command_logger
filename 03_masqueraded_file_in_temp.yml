@@ -1,0 +1,40 @@
+title: Masqueraded File Written to Temp or AppData
+id: a3513358-341b-4b4d-81ec-7320569f2577
+status: experimental
+description: >
+    Detects creation of a file in a Temp/AppData location under a name that
+    mimics legitimate software or uses machine-generated obfuscation
+    (GUID / long hex / "update_cache", "code-sign", etc.). The training
+    command-logger drops its output into these directories under disguised
+    names so that casual inspection mistakes it for a cache or system file.
+    Backed by Sysmon Event ID 11 (FileCreate).
+references:
+    - https://attack.mitre.org/techniques/T1036/005/
+    - https://attack.mitre.org/techniques/T1074/001/
+    - Internal project: Detection Engineering Lab (command_logger / detector)
+author: Hisham Zarour
+date: 2026-11-17
+logsource:
+    product: windows
+    category: file_event          # Sysmon Event ID 11
+detection:
+    selection_path:
+        TargetFilename|contains:
+            - '\AppData\Local\Temp\'
+            - '\AppData\Roaming\'
+            - '\Windows\Temp\'
+    selection_creator:
+        Image|endswith:
+            - '\python.exe'
+            - '\pythonw.exe'
+    selection_names:
+        TargetFilename|re: '(?i)(update_cache|code[-_]?sign|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}|[0-9a-f]{16,})'
+    condition: selection_path and selection_creator and selection_names
+falsepositives:
+    - Python applications that legitimately cache GUID-named files in Temp
+    - Package managers writing hashed artifact names
+level: high
+tags:
+    - attack.defense-evasion
+    - attack.t1036.005
+    - attack.t1074.001

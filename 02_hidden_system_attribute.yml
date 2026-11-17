@@ -1,0 +1,33 @@
+title: Hidden or System Attribute Set via attrib.exe
+id: a71c21dc-2964-401e-ba9d-9ed6435fe837
+status: experimental
+description: >
+    Detects use of attrib.exe to add the HIDDEN (+h) and/or SYSTEM (+s)
+    attribute to a file. The training command-logger hides its captured
+    output so it does not appear in a normal Explorer listing. Adding the
+    SYSTEM attribute on top of HIDDEN is a stronger signal, because it also
+    hides the file even when "show hidden files" is enabled.
+references:
+    - https://attack.mitre.org/techniques/T1564/001/
+    - Internal project: Detection Engineering Lab (command_logger / detector)
+author: Hisham Zarour
+date: 2026-11-17
+logsource:
+    product: windows
+    category: process_creation
+detection:
+    selection_img:
+        - Image|endswith: '\attrib.exe'
+        - OriginalFileName: 'ATTRIB.EXE'
+    selection_flags:
+        CommandLine|contains:
+            - ' +h'
+            - ' +s'
+    condition: all of selection_*
+falsepositives:
+    - Installers and setup scripts that hide configuration files
+    - Legitimate administrative batch scripts
+level: medium
+tags:
+    - attack.defense-evasion
+    - attack.t1564.001

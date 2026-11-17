@@ -1,0 +1,40 @@
+title: Console Input Recorder Writing to Multiple Persistence Locations
+id: c2b2f00f-c21e-477e-90fa-0b9a26687c63
+status: experimental
+description: >
+    Detects a single script interpreter process creating its output in
+    several sensitive locations in quick succession (current dir, Temp,
+    AppData). The training command-logger uses a per-location evasion
+    strategy, writing the same captured data to multiple places with a
+    fallback chain so that deleting one copy does not remove the data.
+    One process fanning out writes across Temp + AppData is the behavioural
+    tell. Backed by Sysmon Event ID 11 (FileCreate), correlated by process.
+references:
+    - https://attack.mitre.org/techniques/T1056/001/
+    - https://attack.mitre.org/techniques/T1074/001/
+    - Internal project: Detection Engineering Lab (command_logger / detector)
+author: Hisham Zarour
+date: 2026-11-17
+logsource:
+    product: windows
+    category: file_event          # Sysmon Event ID 11
+detection:
+    selection_creator:
+        Image|endswith:
+            - '\python.exe'
+            - '\pythonw.exe'
+    selection_locations:
+        TargetFilename|contains:
+            - '\AppData\Local\Temp\'
+            - '\AppData\Roaming\'
+            - '\Windows\Temp\'
+    timeframe: 10s
+    condition: selection_creator and selection_locations | count(TargetFilename) by Image > 2
+falsepositives:
+    - Python build/test runs that scatter temp files across locations
+    - Legitimate installers using fallback write paths
+level: high
+tags:
+    - attack.collection
+    - attack.t1056.001
+    - attack.t1074.001
